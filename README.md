@@ -2,8 +2,6 @@
 
 A small local tool for getting a thought out of your head in a few seconds and finding it again later. Built on [Microsoft Foundry Local](https://learn.microsoft.com/azure/ai-foundry/foundry-local/) so the one AI feature runs on the laptop, with nothing sent to the cloud.
 
-> Article: [ADD MEDIUM LINK HERE]
-
 ## Why I built it
 
 When I'm in the middle of a task, a stray thought pulls me away: a new concept I want to look up, an idea, "I forgot to dry my clothes". Searching it right then turns a short task into a detour, and trusting myself to remember later doesn't work. I wanted one place to drop the thought and keep going.
@@ -99,7 +97,7 @@ I use `qwen2.5-1.5b` for related words. The scripts for these runs are in `testi
 | Queries where related words only added noise | | 3 |
 | Average time for related words (load + answer + unload) | | 24.4 s |
 
-**Notes on this test:** [ADD ONE OR TWO HONEST SENTENCES AFTER YOU RUN IT. Mention how many thoughts and queries, that "relevant" is my own judgement, and what surprised you.]
+**Notes on this test:** 12 queries over 16 thoughts; “relevant” is my own judgement, and I wrote the starter set. Related words recovered one extra thought (“tired at night” found “can’t sleep”), added three irrelevant results, and took about 24 s per search because the model is loaded and unloaded each time (7.6 to 30.7 s). In this test it did not earn a place as a default, so it stays an opt-in checkbox
 
 ## Setup
 
@@ -143,15 +141,4 @@ The model downloads the first time you use related words. Optionally add the fol
 | `dump.bat` | Launcher. Uses `.venv` next to it if it exists, otherwise your system Python. |
 | `testing_setup/hello_foundry.py` | First test: one model, one question. |
 | `testing_setup/compare_models.py` | The 12-note labeling experiment (currently lists only `qwen2.5-1.5b`). |
-| `testing_setup/eval_expand.py` | Plain search versus related-words search. |# Thought Dump
-
-
-**Related-words search (the only place the model is used).**
-
-1. Plain search runs first and its results show immediately.
-2. If the box is ticked, the app loads `qwen2.5-1.5b` through the Foundry Local Python SDK in a background thread.
-3. A few-shot prompt asks for up to 8 related words on one line.
-4. The reply is cleaned (lowercase, 3+ letters, no filler, nothing already searched), and those words are searched again. Results already shown are skipped.
-5. The model is unloaded in a `finally` block, so it is out of memory whether the call worked or not.
-
-If the model is missing or fails, a message appears and the plain results still stand.
+| `testing_setup/eval_expand.py` | Plain search versus related-words search. |
