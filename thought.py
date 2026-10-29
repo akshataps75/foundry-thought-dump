@@ -50,12 +50,43 @@ Related:"""
 
 # ---------- database ----------
 
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS thoughts (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    text          TEXT NOT NULL,
+    created       TEXT NOT NULL,
+    label         TEXT,
+    status        TEXT NOT NULL DEFAULT 'new',
+    state         TEXT DEFAULT 'open',
+    state_changed TEXT
+);
+CREATE VIRTUAL TABLE IF NOT EXISTS thoughts_fts
+    USING fts5(text, content='thoughts', content_rowid='id');
+CREATE TRIGGER IF NOT EXISTS thoughts_ai AFTER INSERT ON thoughts BEGIN
+    INSERT INTO thoughts_fts(rowid, text) VALUES (new.id, new.text);
+END;
+CREATE TRIGGER IF NOT EXISTS thoughts_ad AFTER DELETE ON thoughts BEGIN
+    INSERT INTO thoughts_fts(thoughts_fts, rowid, text) VALUES ('delete', old.id, old.text);
+END;
+CREATE TRIGGER IF NOT EXISTS thoughts_au AFTER UPDATE OF text ON thoughts BEGIN
+    INSERT INTO thoughts_fts(thoughts_fts, rowid, text) VALUES ('delete', old.id, old.text);
+    INSERT INTO thoughts_fts(rowid, text) VALUES (new.id, new.text);
+END;
+"""
+
+
+def init_db(con):
+    """Create the table, search index and triggers on first run. Safe to run every time."""
+    con.executescript(SCHEMA)
+
+
 def connect():
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
-    cols = {r["name"] for r in con.execute("PRAGMA table_info(thoughts)")}
-    if "state" not in cols:
-        sys.exit("Database not migrated yet. Run migrate.py first.")
+    try:
+        init_db(con)
+    except sqlite3.OperationalError as e:
+        sys.exit(f"Could not set up the database: {e}")
     return con
 
 
@@ -123,7 +154,7 @@ def search(con, words, exclude=()):
         "WHERE thoughts_fts MATCH ? ORDER BY bm25(thoughts_fts)", (q,)).fetchall()
     return [r for r in rows if r["id"] not in exclude]
 
-
+_state = {}
 def expand_words(words):
     """Ask the local model for words related to `words`.
 
@@ -134,8 +165,9 @@ def expand_words(words):
 
     try:
         from foundry_local_sdk import Configuration, FoundryLocalManager
-
-        FoundryLocalManager.initialize(Configuration(app_name="thought_dump"))
+        if not _state.get("ready"):
+            FoundryLocalManager.initialize(Configuration(app_name="thought_dump"))
+            _state["ready"] = True
         model = FoundryLocalManager.instance.catalog.get_model(MODEL_ALIAS)
         if model is None:
             print(f"model '{MODEL_ALIAS}' not found in the SDK catalog")

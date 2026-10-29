@@ -1,2 +1,6 @@
 @echo off
-"D:\foundry-toolkit\.venv\Scripts\python.exe" "D:\foundry-toolkit\thought.py" %*
+if exist "%~dp0.venv\Scripts\python.exe" (
+    "%~dp0.venv\Scripts\python.exe" "%~dp0thought.py" %*
+) else (
+    python "%~dp0thought.py" %*
+)
