@@ -1,0 +1,24 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Databases & Local Backups (Contains your personal thoughts)
+*.db
+*.sqlite
+*.sqlite3
+thoughts_before_migration_*
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Environment / Secret files
+.env
+.env.local
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
